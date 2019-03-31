@@ -12,6 +12,7 @@
 #include "SecurityEx.au3"
 #include "Services.au3"
 #include <Process.au3>
+#include <File.au3>
 #include "Toast.au3"
 
 Global $app_name = "Janison Runtime Assistant"
@@ -27,28 +28,116 @@ Local $old_mouse_pos = $curr_mouse_pos
 local $mouse_move_pixels = 1
 _Toast_Set(0, -1, -1, -1, -1, -1, "", 100, 100)
 
-; Update Windows Credentials Manager with standard credentials to test automation machines
+; Update Windows Hosts file and Credentials Manager with standard credentials to test automation machines
 
-_Toast_Show(0, $app_name, "Recreating stored logins ...", -30, False, True)
+_Toast_Show(0, $app_name, "Updating hosts and logins ...", -30, False, True)
 
-; For Coffs Windows machines
+Local $hosts_arr
+Local $hosts_2d_arr[0][2]
+
+_FileReadToArray("C:\Windows\System32\drivers\etc\hosts", $hosts_arr)
+
+For $i = 1 to $hosts_arr[0]
+
+	Local $line = StringStripWS($hosts_arr[$i], 3)
+
+	if StringLen($line) > 0 And StringCompare(StringLeft($line, 1), "#") <> 0 Then
+
+		Local $line_part = StringSplit($line, " ", 3)
+		_ArrayAdd($hosts_2d_arr, $line_part[0] & "|" & $line_part[1])
+	Else
+
+		_ArrayAdd($hosts_2d_arr, $hosts_arr[$i] & "|")
+	EndIf
+Next
+
+;_ArrayDisplay($hosts_2d_arr)
+
+Local $hosts_update_required = False
 
 for $ip_last_number = 1 to 20
 
+	Local $highsierra_found = False
+	Local $highsierra_janison_com_au_found = False
+	Local $windows_found = False
+	Local $windows_janison_com_au_found = False
+
+	for $hosts_index = 0 to (UBound($hosts_2d_arr) - 1)
+
+		Switch $hosts_2d_arr[$hosts_index][0]
+
+			Case "10.111.80." & $ip_last_number
+
+				Switch $hosts_2d_arr[$hosts_index][1]
+
+					Case "coffsauto" & $ip_last_number & "highsierra"
+
+						$highsierra_found = True
+
+					Case "coffsauto" & $ip_last_number & "highsierra.janison.com.au"
+
+						$highsierra_janison_com_au_found = True
+				EndSwitch
+
+			Case "10.111.81." & $ip_last_number
+
+				Switch $hosts_2d_arr[$hosts_index][1]
+
+					Case "coffsauto" & $ip_last_number
+
+						$windows_found = True
+
+					Case "coffsauto" & $ip_last_number & ".janison.com.au"
+
+						$windows_janison_com_au_found = True
+				EndSwitch
+		EndSwitch
+	Next
+
+	if $highsierra_found = False Then
+
+		_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra")
+		$hosts_update_required = True
+	EndIf
+
+	if $highsierra_janison_com_au_found = False Then
+
+		_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra.janison.com.au")
+		$hosts_update_required = True
+	EndIf
+
+	if $windows_found = False Then
+
+		_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number)
+		$hosts_update_required = True
+	EndIf
+
+	if $windows_janison_com_au_found = False Then
+
+		_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number & ".janison.com.au")
+		$hosts_update_required = True
+	EndIf
+
+	; For Coffs Windows machines
+
 	RunWait(@ComSpec & " /c cmdkey /delete:10.111.81." & $ip_last_number, "", @SW_HIDE)
 	RunWait(@ComSpec & " /c cmdkey /add:10.111.81." & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
+
+	; For Coffs Mac machines
+
+	RunWait(@ComSpec & " /c cmdkey /delete:10.111.80." & $ip_last_number, "", @SW_HIDE)
+	RunWait(@ComSpec & " /c cmdkey /add:10.111.80." & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
 
 	RunWait(@ComSpec & " /c cmdkey /delete:coffsauto" & $ip_last_number, "", @SW_HIDE)
 	RunWait(@ComSpec & " /c cmdkey /add:coffsauto" & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
 Next
 
-; For Coffs Mac machines
+ConsoleWrite('@@ Debug(' & @ScriptLineNumber & ') : $hosts_update_required = ' & $hosts_update_required & @CRLF & '>Error code: ' & @error & @CRLF) ;### Debug Console
 
-for $ip_last_number = 1 to 20
+if $hosts_update_required = True Then
 
-	RunWait(@ComSpec & " /c cmdkey /delete:10.111.80." & $ip_last_number, "", @SW_HIDE)
-	RunWait(@ComSpec & " /c cmdkey /add:10.111.80." & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
-Next
+	_FileWriteFromArray("C:\Windows\System32\drivers\etc\hosts", $hosts_2d_arr, Default, Default, " ")
+EndIf
 
 ; Check if this is currently a RDP session
 
