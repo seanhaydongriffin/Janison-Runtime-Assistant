@@ -118,6 +118,42 @@ for $ip_last_number = 1 to 20
 		$hosts_update_required = True
 	EndIf
 
+	; Azure VM mappings
+
+	_ArrayAdd($hosts_2d_arr, "10.1.0.5|azureauto1")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.7|azureauto3")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.4|azureauto4")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.6|azureauto5")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.10|azureauto8")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.8|azureauto10")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.9|azureauto11")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.12|azureauto13")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.13|azureauto14")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.14|azureauto15")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.16|azureauto17")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.18|azureauto19")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.19|azureauto20")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.15|azureauto22")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.17|azureauto23")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.20|azureauto24")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.22|azureauto26")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.23|azureauto27")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.24|azureauto28")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.25|azureauto29")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.27|azureauto31")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.29|azureauto33")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.32|azureauto36")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.33|azureauto37")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.34|azureauto38")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.35|azureauto39")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.37|azureauto41")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.40|azureauto44")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.41|azureauto45")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.42|azureauto46")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.43|azureauto47")
+	_ArrayAdd($hosts_2d_arr, "10.1.0.45|azureauto49")
+
+
 	; For Coffs Windows machines
 
 	RunWait(@ComSpec & " /c cmdkey /delete:10.111.81." & $ip_last_number, "", @SW_HIDE)
@@ -196,32 +232,95 @@ while True
 
 		$timer2 = 0
 
-		$proc="chrome.exe"
+
+
+		$proc="chromedriver.exe"
 		$oWMI=ObjGet("winmgmts:{impersonationLevel=impersonate}!\\.\root\cimv2")
 		$oProcessColl=$oWMI.ExecQuery("Select * from Win32_Process where Name= " & '"'& $Proc & '"')
 
 		For $Process In $oProcessColl
+
+			; search all chromedriver processes for any with no child chrome process.
+			;  these can be killed
+
+			$chromedriver_child_process_arr = _ChildProcess($Process.ProcessId)
+;			_ArrayDisplay($chromedriver_child_process_arr)
+
+			Local $child_chrome_process_found = False
+
+			for $i = 0 to (UBound($chromedriver_child_process_arr) - 1)
+
+				if StringCompare($chromedriver_child_process_arr[$i][1], "chrome.exe") = 0 Then
+
+					$child_chrome_process_found = True
+					ExitLoop
+				EndIf
+			Next
+
+			; if no chrome found for the chromedriver then no reason to keep it running.
+
+			if $child_chrome_process_found = False Then
+
+				ProcessClose($Process.ProcessId)
+			EndIf
+
+		Next
+
+
+
+
+
+
+;		$proc="chrome.exe"
+;		$oWMI=ObjGet("winmgmts:{impersonationLevel=impersonate}!\\.\root\cimv2")
+;		$oProcessColl=$oWMI.ExecQuery("Select * from Win32_Process where Name= " & '"'& $Proc & '"')
+
+;		For $Process In $oProcessColl
+
+			; search all chrome processes for one containing a PID of an automated script (-scriptpid)
+
+;			if StringInStr($Process.Commandline, "--scriptpid-") > 0 Then
+
+;				Local $arr = StringRegExp($Process.Commandline, ".*--scriptpid-(\d++)", 3)
+
+;				if UBound($arr) >= 1 Then
+
+					; if the PID of the automated script no longer for this scriptpid, then we should kill the chromedriver associated with this chrome process
+
+;					if ProcessExists(Number($arr[0])) = False Then
+
+;						ConsoleWrite("This chrome PID " & $Process.ProcessId & " is related to Script PID " & Number($arr[0]) & " which no longer exists" & @CRLF)
+;						Local $chromedriver_pid = _WinAPI_GetParentProcess($Process.ProcessId)
+;						ConsoleWrite('@@ Debug(' & @ScriptLineNumber & ') : $chromedriver_pid = ' & $chromedriver_pid & @CRLF & '>Error code: ' & @error & @CRLF) ;### Debug Console
+;						ProcessClose($chromedriver_pid)
+;					EndIf
+;				EndIf
+;			EndIf
+
+
 
 	;		if StringInStr($Process.Commandline, "--type=gpu-process") > 0 Then
 
 	;			ProcessClose($Process.ProcessId)
 	;		EndIf
 
-			if StringInStr($Process.Commandline, "--extension-process") > 0 Then
+			; Sean G 15 Sep 2020 - below process closes are potentially crashing latest versions of Chrome and messing with windows desktop
 
-				ProcessClose($Process.ProcessId)
-			EndIf
+	;		if StringInStr($Process.Commandline, "--extension-process") > 0 Then
 
-			if StringInStr($Process.Commandline, "--type=crashpad-handler") > 0 Then
+	;			ProcessClose($Process.ProcessId)
+	;		EndIf
 
-				ProcessClose($Process.ProcessId)
-			EndIf
+	;		if StringInStr($Process.Commandline, "--type=crashpad-handler") > 0 Then
 
-			if StringInStr($Process.Commandline, "--type=watcher") > 0 Then
+	;			ProcessClose($Process.ProcessId)
+	;		EndIf
 
-				ProcessClose($Process.ProcessId)
-			EndIf
-		Next
+	;		if StringInStr($Process.Commandline, "--type=watcher") > 0 Then
+
+	;			ProcessClose($Process.ProcessId)
+	;		EndIf
+		;Next
 
 		; Bring the command prompts to the front, so they are on top of the Replay App
 
@@ -260,28 +359,28 @@ while True
 		$timer = 0
 
 		; Check and turn off UAC
-		if RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System", "ConsentPromptBehaviorAdmin") <> 0 Then
+		if RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System", "ConsentPromptBehaviorAdmin") <> 0 or @error <> 0 Then
 
 			RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System", "ConsentPromptBehaviorAdmin", "REG_DWORD", 0)
 		EndIf
 
-		if RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\System", "PromptOnSecureDesktop") <> 0 Then
+		if RegRead("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\System", "PromptOnSecureDesktop") <> 0 or @error <> 0 Then
 
 			RegWrite("HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Policies\System", "PromptOnSecureDesktop", "REG_DWORD", 0)
 		EndIf
 
 		; Check and force Screen lock off...
-		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveActive") <> 0 Then
+		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveActive") <> 0 or @error <> 0 Then
 
 			RegWrite("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveActive", "REG_SZ", 0)
 		EndIf
 
-		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaverIsSecure") <> 0 Then
+		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaverIsSecure") <> 0 or @error <> 0 Then
 
 			RegWrite("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaverIsSecure", "REG_SZ", 0)
 		EndIf
 
-		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveTimeOut") <> 0 Then
+		if RegRead("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveTimeOut") <> 0 or @error <> 0 Then
 
 			RegWrite("HKEY_CURRENT_USER\Control Panel\Desktop", "ScreenSaveTimeOut", "REG_SZ", 0)
 		EndIf
@@ -805,3 +904,65 @@ Func stop_disable_service($service_name)
 	_Service_Stop($service_name)
 EndFunc
 
+
+;===============================================================================
+; Function Name:    _ChildProcess
+; Description:      Returns an array containing child process info
+; Parameter(s):     $iParentPID - Parent Process PID
+;
+; Requirement(s):   AutoIt 3.8+
+; Return Value(s):  two dimensional array $aChildren[][] as follows
+;                   $aChildren[0][0] = Number of children found
+;
+;                   $aChildren[x][0] = Child Process's PID (called Handle, but not a handle object)
+;                   $aChildren[x][1] = Child Process's Name
+;                   $aChildren[x][2] = Child Process's Command Line
+;                   $aChildren[x][3] = Child Process's Executable Path
+;                   $aChildren[x][4] = Child Process's Creation Date and Time
+;                   $aChildren[x][5] = Child Process's Session Id
+;                   $aChildren[x][6] = Child Process's Status
+;                   $aChildren[x][7] = Child Process's Termination Date
+;
+; AutoIt Version:   3.2.8.1
+; Author:           JerryD
+;===============================================================================
+
+Func _ChildProcess ( $iParentPID )
+    Local Const $wbemFlagReturnImmediately = 0x10, $wbemFlagForwardOnly = 0x20
+    Local Const $sQuery = 'SELECT * FROM Win32_Process Where ParentProcessId = ' & $iParentPID & ' AND Handle <> ' & $iParentPID
+    Local $aChildren[1][8]
+    $aChildren[0][0] = 0
+    $aChildren[0][1] = 'Name'
+    $aChildren[0][2] = 'Command Line'
+    $aChildren[0][3] = 'Executable Path'
+    $aChildren[0][4] = 'Creation Date and Time'
+    $aChildren[0][5] = 'Session Id'
+    $aChildren[0][6] = 'Status'
+    $aChildren[0][7] = 'Termination Date'
+
+    Local $objWMIService = ObjGet ( 'winmgmts:\\localhost\root\CIMV2' )
+    If NOT IsObj ( $objWMIService ) Then
+        SetError ( 1 )
+        Return $aChildren
+    EndIf
+    Local $colItems = $objWMIService.ExecQuery ( $sQuery, 'WQL', $wbemFlagReturnImmediately + $wbemFlagForwardOnly )
+    If IsObj($colItems) then
+        For $objItem In $colItems
+            $aChildren[0][0] += 1
+            ReDim $aChildren[$aChildren[0][0]+1][8]
+            $aChildren[$aChildren[0][0]][0] = $objItem.Handle
+            $aChildren[$aChildren[0][0]][1] = $objItem.Name
+            $aChildren[$aChildren[0][0]][2] = $objItem.CommandLine
+            $aChildren[$aChildren[0][0]][3] = $objItem.ExecutablePath
+            $aChildren[$aChildren[0][0]][4] = $objItem.CreationDate
+            $aChildren[$aChildren[0][0]][5] = $objItem.SessionId
+            $aChildren[$aChildren[0][0]][6] = $objItem.Status
+            $aChildren[$aChildren[0][0]][7] = $objItem.TerminationDate
+        Next
+    Else
+        SetError ( 2 )
+        Return $aChildren
+    EndIf
+    SetError ( 0 )
+    Return $aChildren
+EndFunc
