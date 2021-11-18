@@ -30,150 +30,110 @@ _Toast_Set(0, -1, -1, -1, -1, -1, "", 100, 100)
 
 ; Update Windows Hosts file and Credentials Manager with standard credentials to test automation machines
 
-_Toast_Show(0, $app_name, "Updating hosts and logins ...", -30, False, True)
+_Toast_Show(0, $app_name, "Updating hosts ...", -30, False, True)
 
-Local $hosts_arr
 Local $hosts_2d_arr[0][2]
+Local $hosts_str = FileRead("C:\Windows\System32\drivers\etc\hosts")
 
-_FileReadToArray("C:\Windows\System32\drivers\etc\hosts", $hosts_arr)
-
-For $i = 1 to $hosts_arr[0]
-
-	Local $line = StringStripWS($hosts_arr[$i], 3)
-
-	if StringLen($line) > 0 And StringCompare(StringLeft($line, 1), "#") <> 0 Then
-
-		Local $line_part = StringSplit($line, " ", 3)
-		_ArrayAdd($hosts_2d_arr, $line_part[0] & "|" & $line_part[1])
-	Else
-
-		_ArrayAdd($hosts_2d_arr, $hosts_arr[$i] & "|")
-	EndIf
-Next
-
-;_ArrayDisplay($hosts_2d_arr)
-
-Local $hosts_update_required = False
+; coffsauto mappings
 
 for $ip_last_number = 1 to 20
 
-	Local $highsierra_found = False
-	Local $highsierra_janison_com_au_found = False
-	Local $windows_found = False
-	Local $windows_janison_com_au_found = False
-
-	for $hosts_index = 0 to (UBound($hosts_2d_arr) - 1)
-
-		Switch $hosts_2d_arr[$hosts_index][0]
-
-			Case "10.111.80." & $ip_last_number
-
-				Switch $hosts_2d_arr[$hosts_index][1]
-
-					Case "coffsauto" & $ip_last_number & "highsierra"
-
-						$highsierra_found = True
-
-					Case "coffsauto" & $ip_last_number & "highsierra.janison.com.au"
-
-						$highsierra_janison_com_au_found = True
-				EndSwitch
-
-			Case "10.111.81." & $ip_last_number
-
-				Switch $hosts_2d_arr[$hosts_index][1]
-
-					Case "coffsauto" & $ip_last_number
-
-						$windows_found = True
-
-					Case "coffsauto" & $ip_last_number & ".janison.com.au"
-
-						$windows_janison_com_au_found = True
-				EndSwitch
-		EndSwitch
-	Next
-
-	if $highsierra_found = False Then
-
-		_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra")
-		$hosts_update_required = True
-	EndIf
-
-	if $highsierra_janison_com_au_found = False Then
-
-		_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra.janison.com.au")
-		$hosts_update_required = True
-	EndIf
-
-	if $windows_found = False Then
-
-		_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number)
-		$hosts_update_required = True
-	EndIf
-
-	if $windows_janison_com_au_found = False Then
-
-		_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number & ".janison.com.au")
-		$hosts_update_required = True
-	EndIf
-
-	; Azure VM mappings
-
-	_ArrayAdd($hosts_2d_arr, "10.1.0.5|azureauto1")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.7|azureauto3")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.4|azureauto4")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.6|azureauto5")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.10|azureauto8")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.8|azureauto10")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.9|azureauto11")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.12|azureauto13")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.13|azureauto14")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.14|azureauto15")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.16|azureauto17")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.18|azureauto19")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.19|azureauto20")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.15|azureauto22")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.17|azureauto23")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.20|azureauto24")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.22|azureauto26")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.23|azureauto27")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.24|azureauto28")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.25|azureauto29")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.27|azureauto31")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.29|azureauto33")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.32|azureauto36")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.33|azureauto37")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.34|azureauto38")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.35|azureauto39")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.37|azureauto41")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.40|azureauto44")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.41|azureauto45")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.42|azureauto46")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.43|azureauto47")
-	_ArrayAdd($hosts_2d_arr, "10.1.0.45|azureauto49")
-
-
-	; For Coffs Windows machines
-
-	RunWait(@ComSpec & " /c cmdkey /delete:10.111.81." & $ip_last_number, "", @SW_HIDE)
-	RunWait(@ComSpec & " /c cmdkey /add:10.111.81." & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
-
-	; For Coffs Mac machines
-
-	RunWait(@ComSpec & " /c cmdkey /delete:10.111.80." & $ip_last_number, "", @SW_HIDE)
-	RunWait(@ComSpec & " /c cmdkey /add:10.111.80." & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
-
-	RunWait(@ComSpec & " /c cmdkey /delete:coffsauto" & $ip_last_number, "", @SW_HIDE)
-	RunWait(@ComSpec & " /c cmdkey /add:coffsauto" & $ip_last_number & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
+	_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra")
+;	_ArrayAdd($hosts_2d_arr, "10.111.80." & $ip_last_number & "|coffsauto" & $ip_last_number & "highsierra.janison.com.au")
+	_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number)
+;	_ArrayAdd($hosts_2d_arr, "10.111.81." & $ip_last_number & "|coffsauto" & $ip_last_number & ".janison.com.au")
 Next
 
-ConsoleWrite('@@ Debug(' & @ScriptLineNumber & ') : $hosts_update_required = ' & $hosts_update_required & @CRLF & '>Error code: ' & @error & @CRLF) ;### Debug Console
+; AWS VM mappings
 
-if $hosts_update_required = True Then
+_ArrayAdd($hosts_2d_arr, "172.31.27.218|awsauto1")
+_ArrayAdd($hosts_2d_arr, "18.225.36.109|awsauto1public")
+_ArrayAdd($hosts_2d_arr, "172.31.15.158|awsauto2")
+_ArrayAdd($hosts_2d_arr, "3.137.213.190|awsauto2public")
+_ArrayAdd($hosts_2d_arr, "172.31.16.70|awsauto100")
+_ArrayAdd($hosts_2d_arr, "3.17.142.144|awsauto100public")
+_ArrayAdd($hosts_2d_arr, "172.31.6.50|awsauto200")
+_ArrayAdd($hosts_2d_arr, "3.137.186.162|awsauto200public")
 
-	_FileWriteFromArray("C:\Windows\System32\drivers\etc\hosts", $hosts_2d_arr, Default, Default, " ")
-EndIf
+; Azure VM mappings
+
+_ArrayAdd($hosts_2d_arr, "10.1.0.5|azureauto1")
+_ArrayAdd($hosts_2d_arr, "10.1.0.7|azureauto3")
+_ArrayAdd($hosts_2d_arr, "10.1.0.4|azureauto4")
+_ArrayAdd($hosts_2d_arr, "10.1.0.6|azureauto5")
+_ArrayAdd($hosts_2d_arr, "10.1.0.10|azureauto8")
+_ArrayAdd($hosts_2d_arr, "10.1.0.8|azureauto10")
+_ArrayAdd($hosts_2d_arr, "10.1.0.9|azureauto11")
+_ArrayAdd($hosts_2d_arr, "10.1.0.12|azureauto13")
+_ArrayAdd($hosts_2d_arr, "10.1.0.13|azureauto14")
+_ArrayAdd($hosts_2d_arr, "10.1.0.14|azureauto15")
+_ArrayAdd($hosts_2d_arr, "10.1.0.16|azureauto17")
+_ArrayAdd($hosts_2d_arr, "10.1.0.18|azureauto19")
+_ArrayAdd($hosts_2d_arr, "10.1.0.19|azureauto20")
+_ArrayAdd($hosts_2d_arr, "10.1.0.15|azureauto22")
+_ArrayAdd($hosts_2d_arr, "10.1.0.17|azureauto23")
+_ArrayAdd($hosts_2d_arr, "10.1.0.20|azureauto24")
+_ArrayAdd($hosts_2d_arr, "10.1.0.22|azureauto26")
+_ArrayAdd($hosts_2d_arr, "10.1.0.23|azureauto27")
+_ArrayAdd($hosts_2d_arr, "10.1.0.24|azureauto28")
+_ArrayAdd($hosts_2d_arr, "10.1.0.25|azureauto29")
+_ArrayAdd($hosts_2d_arr, "10.1.0.27|azureauto31")
+_ArrayAdd($hosts_2d_arr, "10.1.0.29|azureauto33")
+_ArrayAdd($hosts_2d_arr, "10.1.0.32|azureauto36")
+_ArrayAdd($hosts_2d_arr, "10.1.0.33|azureauto37")
+_ArrayAdd($hosts_2d_arr, "10.1.0.34|azureauto38")
+_ArrayAdd($hosts_2d_arr, "10.1.0.35|azureauto39")
+_ArrayAdd($hosts_2d_arr, "10.1.0.37|azureauto41")
+_ArrayAdd($hosts_2d_arr, "10.1.0.40|azureauto44")
+_ArrayAdd($hosts_2d_arr, "10.1.0.41|azureauto45")
+_ArrayAdd($hosts_2d_arr, "10.1.0.42|azureauto46")
+_ArrayAdd($hosts_2d_arr, "10.1.0.43|azureauto47")
+_ArrayAdd($hosts_2d_arr, "10.1.0.45|azureauto49")
+_ArrayAdd($hosts_2d_arr, "10.1.0.21|azureauto100")
+_ArrayAdd($hosts_2d_arr, "10.1.0.30|azureauto103")
+_ArrayAdd($hosts_2d_arr, "10.1.0.51|azureauto104")
+_ArrayAdd($hosts_2d_arr, "10.1.0.53|azureauto106")
+_ArrayAdd($hosts_2d_arr, "10.1.0.54|azureauto107")
+_ArrayAdd($hosts_2d_arr, "10.1.0.28|azureauto110")
+_ArrayAdd($hosts_2d_arr, "10.1.0.31|azureauto111")
+_ArrayAdd($hosts_2d_arr, "10.1.0.49|azureauto113")
+_ArrayAdd($hosts_2d_arr, "10.1.0.36|azureauto201")
+_ArrayAdd($hosts_2d_arr, "10.1.0.38|azureauto202")
+_ArrayAdd($hosts_2d_arr, "10.1.0.46|azureauto205")
+_ArrayAdd($hosts_2d_arr, "10.1.0.47|azureauto206")
+_ArrayAdd($hosts_2d_arr, "10.1.0.48|azureauto207")
+_ArrayAdd($hosts_2d_arr, "10.1.0.50|azureauto209")
+_ArrayAdd($hosts_2d_arr, "10.1.0.26|azureauto210")
+_ArrayAdd($hosts_2d_arr, "10.1.0.39|azureauto213")
+
+; update / add these to the hosts file
+
+for $i = 0 to (UBound($hosts_2d_arr) - 1)
+
+	Local $host_found = StringRegExp($hosts_str, "(?m)^" & $hosts_2d_arr[$i][0] & "[ \t]", 0)
+
+	if $host_found = 1 Then
+
+		$hosts_str = StringRegExpReplace($hosts_str, "(?m)^" & $hosts_2d_arr[$i][0] & "[ \t].*$", $hosts_2d_arr[$i][0] & " " & $hosts_2d_arr[$i][1])
+	Else
+
+		$hosts_str = $hosts_str & @CRLF & $hosts_2d_arr[$i][0] & " " & $hosts_2d_arr[$i][1]
+	EndIf
+Next
+
+FileDelete("C:\Windows\System32\drivers\etc\hosts")
+FileWrite("C:\Windows\System32\drivers\etc\hosts", $hosts_str)
+
+; update VM credentials in Windows
+
+_Toast_Show(0, $app_name, "Updating logins ...", -30, False, True)
+
+for $i = 0 to (UBound($hosts_2d_arr) - 1)
+
+	RunWait(@ComSpec & " /c cmdkey /delete:" & $hosts_2d_arr[$i][0], "", @SW_HIDE)
+	RunWait(@ComSpec & " /c cmdkey /add:" & $hosts_2d_arr[$i][0] & " /user:localhost\auto /pass:janison", "", @SW_HIDE)
+Next
 
 ; Check if this is currently a RDP session
 
